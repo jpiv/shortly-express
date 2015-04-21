@@ -13,6 +13,10 @@ var Click = require('./app/models/click');
 
 var app = express();
 
+//For sessions, it's dark magic
+var session = require('express-session');
+
+
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
 app.use(partials());
@@ -23,24 +27,42 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
 
-app.get('/', 
+app.get('/',
 function(req, res) {
-  res.render('index');
+  //if detected NOT logged in
+    res.redirect('/login');
+  //else using cookie data go to index as that user
+    //res.render('index');
 });
 
-app.get('/create', 
+app.get('/create',
 function(req, res) {
-  res.render('index');
+  //if not logged in, redirect to login
+    res.redirect('/login');
+  // res.render('index');
 });
 
-app.get('/links', 
+app.get('/test', function (req, res){
+  var test = "";
+
+  Users.fetch().then(function(users){
+    for(var i=0; i<users.models.length; i++){
+      test += JSON.stringify(users.models[i].attributes) + "<br />";
+    }
+    res.send(200, test);
+  });
+});
+
+app.get('/links',
 function(req, res) {
+  //if not logged in, redirect to login
+
   Links.reset().fetch().then(function(links) {
     res.send(200, links.models);
   });
 });
 
-app.post('/links', 
+app.post('/links',
 function(req, res) {
   var uri = req.body.url;
 
@@ -51,14 +73,16 @@ function(req, res) {
 
   new Link({ url: uri }).fetch().then(function(found) {
     if (found) {
+      console.log('Found: '+uri);
       res.send(200, found.attributes);
     } else {
+      console.log('NotFound: '+uri);
+
       util.getUrlTitle(uri, function(err, title) {
         if (err) {
           console.log('Error reading URL heading: ', err);
           return res.send(404);
         }
-
         var link = new Link({
           url: uri,
           title: title,
@@ -77,6 +101,32 @@ function(req, res) {
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
+app.post('/signup', function (req, res){
+  new User({username:req.body.username, password: req.body.password}).save().then(function(newUser){
+    //console.log(newUser);
+    Users.add(newUser);
+    res.redirect('/login');
+  });
+
+});
+app.get('/signup', function (req, res){
+  res.render('signup');
+});
+
+app.get('/login', function (req, res){
+  res.render('login');
+});
+
+app.post('/login', function (req, res){
+  new User({username: req.body.username, password: req.body.password}).fetch().then(function(user){
+    if(user){
+
+    }else{
+      console.log('aosjbh124235647vnkajfb');
+    }
+  });
+  // res.render('login');
+});
 
 
 
@@ -88,6 +138,7 @@ function(req, res) {
 
 app.get('/*', function(req, res) {
   new Link({ code: req.params[0] }).fetch().then(function(link) {
+    //console.log(link);
     if (!link) {
       res.redirect('/');
     } else {
