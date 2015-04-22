@@ -19,9 +19,11 @@ var xbeforeEach = function(){};
 
 describe('', function() {
 
-  beforeEach(function() {
+ beforeEach(function() {
     // log out currently signupgned in user
-    request('http://127.0.0.1:4568/logout', function(error, res, body) {});
+    request('http://127.0.0.1:4568/logout', function(error, res, body) {
+      // con÷sole.log(error);
+    });
 
     // delete link for roflzoo from db so it can be created later for the test
     db.knex('urls')
@@ -64,7 +66,7 @@ describe('', function() {
 
     var requestWithSession = request.defaults({jar: true});
 
-    xbeforeEach(function(done){      // create a user that we can then log-in with
+    beforeEach(function(done){      // create a user that we can then log-in with
       new User({
           'username': 'Phillip',
           'password': 'Phillip'
@@ -239,7 +241,7 @@ describe('', function() {
 
   }); // 'Priviledged Access'
 
-  xdescribe('Account Creation:', function(){
+  describe('Account Creation:', function(){
 
     it('Signup creates a user record', function(done) {
       var options = {

@@ -22,7 +22,7 @@ app.use(session({
 }));
 
 //Session Time limit
-var sessionTime = 60000;
+var sessionTime = 2000;
 
 
 app.set('views', __dirname + '/views');
@@ -39,18 +39,12 @@ app.use(express.static(__dirname + '/public'));
 
 app.use(function(req,res,next) {
   var currentUser = req.session.user;
-      console.log(req.session.user, ':::currentUser');
-  if(!req.session.user && req.url !== '/signup'){
+     // console.log(req.session.user, ':::currentUser');
+  if(!req.session.user && req.url !== '/signup' && req.url !== '/login' && req.url !== '/favicon.ico'){
 
-    req.url = '/login';
-  }else{
-    // req.session.reload(function(err){
-    //   if(err)console.log(err)
-    //   // req.session.user = currentUser;
-    //   req.session.cookie.expires = new Date(Date.now() + sessionTime);
-    // });
-
+    res.redirect('/login');
   }
+    req.session.touch();
     next();
 })
 
@@ -87,6 +81,7 @@ function(req, res) {
 
 app.post('/links',
 function(req, res) {
+console.log('ddasf324232342323asdf');
   var uri = req.body.url;
 
   if (!util.isValidUrl(uri)) {
@@ -128,7 +123,14 @@ app.post('/signup', function (req, res){
   new User({username:req.body.username, password: req.body.password}).save().then(function(newUser){
     //console.log(newUser);
     Users.add(newUser);
-    res.redirect('/login');
+    req.session.regenerate(function(err){
+        if(err) { console.log(err); }else{
+          req.session.user = req.body.username;
+          console.log(Date.now(), sessionTime)
+          req.session.cookie.maxAge = sessionTime;
+          res.redirect('/');
+        }
+      });
   });
 
 });
@@ -147,7 +149,7 @@ app.post('/login', function (req, res){
         if(err) { console.log(err); }else{
           req.session.user = req.body.username;
           console.log(Date.now(), sessionTime)
-          req.session.cookie.expires = new Date(Date.now() + sessionTime);
+          req.session.cookie.maxAge = sessionTime;
           res.redirect('/');
         }
       });
@@ -159,11 +161,12 @@ app.post('/login', function (req, res){
 });
 //--------------------------------------------------------------
 app.get('/logout', function (req, res){
+    // res.location('/login');
   req.session.destroy(function (err){
-    if(err) { console.log(err); }else{
-      res.redirect('/login');
-    }
+    if(err) { console.log(err); }
   });
+
+    res.redirect('/login');
 
 });
 
@@ -172,12 +175,14 @@ app.get('/logout', function (req, res){
 // assume the route is a short code and try and handle it here.
 // If the short-code doesn't exist, send the user to '/'
 /************************************************************/
-
+app.get('/favicon.ico', function(req, res) {
+  res.send(200);
+});
 app.get('/*', function(req, res) {
   new Link({ code: req.params[0] }).fetch().then(function(link) {
     //console.log(link);
     if (!link) {
-      res.redirect('/');
+      return res.redirect('/');
     } else {
       var click = new Click({
         link_id: link.get('id')
