@@ -1,4 +1,4 @@
-var express = require('express');
+  var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
@@ -15,6 +15,14 @@ var app = express();
 
 //For sessions, it's dark magic
 var session = require('express-session');
+app.use(session({
+  secret: 'WE CAN FLY!',
+  resave: false,
+  saveUninitialized: false
+}));
+
+//Session Time limit
+var sessionTime = 60000;
 
 
 app.set('views', __dirname + '/views');
@@ -27,19 +35,34 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
 
+
+
+app.use(function(req,res,next) {
+  var currentUser = req.session.user;
+      console.log(req.session.user, ':::currentUser');
+  if(!req.session.user && req.url !== '/signup'){
+
+    req.url = '/login';
+  }else{
+    // req.session.reload(function(err){
+    //   if(err)console.log(err)
+    //   // req.session.user = currentUser;
+    //   req.session.cookie.expires = new Date(Date.now() + sessionTime);
+    // });
+
+  }
+    next();
+})
+
+
 app.get('/',
 function(req, res) {
-  //if detected NOT logged in
-    res.redirect('/login');
-  //else using cookie data go to index as that user
-    //res.render('index');
+  res.render('index');
 });
 
 app.get('/create',
 function(req, res) {
-  //if not logged in, redirect to login
-    res.redirect('/login');
-  // res.render('index');
+  res.render('index');
 });
 
 app.get('/test', function (req, res){
@@ -112,7 +135,7 @@ app.post('/signup', function (req, res){
 app.get('/signup', function (req, res){
   res.render('signup');
 });
-
+//--------------------------------------------------------------
 app.get('/login', function (req, res){
   res.render('login');
 });
@@ -120,15 +143,29 @@ app.get('/login', function (req, res){
 app.post('/login', function (req, res){
   new User({username: req.body.username, password: req.body.password}).fetch().then(function(user){
     if(user){
-
+      req.session.regenerate(function(err){
+        if(err) { console.log(err); }else{
+          req.session.user = req.body.username;
+          console.log(Date.now(), sessionTime)
+          req.session.cookie.expires = new Date(Date.now() + sessionTime);
+          res.redirect('/');
+        }
+      });
     }else{
-      console.log('aosjbh124235647vnkajfb');
+      console.log('Failed Login');
     }
   });
   // res.render('login');
 });
+//--------------------------------------------------------------
+app.get('/logout', function (req, res){
+  req.session.destroy(function (err){
+    if(err) { console.log(err); }else{
+      res.redirect('/login');
+    }
+  });
 
-
+});
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail

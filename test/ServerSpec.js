@@ -20,7 +20,7 @@ var xbeforeEach = function(){};
 describe('', function() {
 
   beforeEach(function() {
-    // log out currently signed in user
+    // log out currently signupgned in user
     request('http://127.0.0.1:4568/logout', function(error, res, body) {});
 
     // delete link for roflzoo from db so it can be created later for the test
@@ -33,7 +33,6 @@ describe('', function() {
           message: 'Failed to create test setup data'
         };
       });
-
     // delete user Svnh from db so it can be created later for the test
     db.knex('users')
       .where('username', '=', 'Svnh')
@@ -65,7 +64,7 @@ describe('', function() {
 
     var requestWithSession = request.defaults({jar: true});
 
-    beforeEach(function(done){      // create a user that we can then log-in with
+    xbeforeEach(function(done){      // create a user that we can then log-in with
       new User({
           'username': 'Phillip',
           'password': 'Phillip'
